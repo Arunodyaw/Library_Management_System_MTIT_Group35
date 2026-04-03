@@ -1,4 +1,4 @@
-from datetime import datetime,date
+from datetime import datetime,date, time
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 import httpx
@@ -373,11 +373,13 @@ async def delete_reservation(reservation_id: int):
 
 # ================= NOTIFICATION SERVICE =================
 class Notification(BaseModel):
-    id: Optional[int] = None  # Make id optional
     user_id: int
+    notification_date: date
+    notification_time: time
     message: str
     type: str   # reminder / reservation / payment
-    status: str = "pending"  # Default value
+    status: str # sent / pending
+
 
 @app.get("/gateway/notifications")
 async def get_notifications():
@@ -387,12 +389,18 @@ async def get_notifications():
 async def get_notification(notification_id: int):
     return await forward_request("notification", f"/notifications/{notification_id}", "GET")
 
+@app.get("/gateway/notifications/type/{type}")
+async def get_notifications_by_type(type: str):
+    return await forward_request("notification", f"/notifications/type/{type}", "GET")
+
+@app.get("/gateway/notifications/status/{status}")
+async def get_notifications_by_status(status: str):
+    return await forward_request("notification", f"/notifications/status/{status}", "GET")
+
 @app.post("/gateway/notifications")
 async def create_notification(notification: Notification):
     notification_dict = notification.dict(exclude_none=True)
     return await forward_request("notification", "/notifications", "POST", json=notification_dict)
-
-
 
 
 @app.put("/gateway/notifications/{notification_id}")

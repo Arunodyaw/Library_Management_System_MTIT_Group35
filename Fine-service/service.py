@@ -5,7 +5,7 @@ class FinePaymentService:
     def __init__(self):
         self.data_service = PaymentMockDataService()
 
-    # ✅ Calculate fine
+    #  Calculate fine
     def calculate_fine(self, due_date: str, return_date: str):
         due_date = datetime.strptime(due_date, "%Y-%m-%d").date()
         return_date = datetime.strptime(return_date, "%Y-%m-%d").date()
