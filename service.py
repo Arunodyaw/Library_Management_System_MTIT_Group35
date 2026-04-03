@@ -6,6 +6,15 @@ class NotificationService:
 
     def get_all(self):
         return self.data_service.get_all_notifications()
+    
+    def get_by_id(self, notification_id):
+        return self.data_service.get_notification_by_id(notification_id)
+    
+    def get_by_type(self, type):    
+        return self.data_service.get_notifications_by_type(type)
+    
+    def get_by_status(self, status):
+        return self.data_service.get_notifications_by_status(status)
 
     def create(self, data):
         return self.data_service.add_notification(data)
