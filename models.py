@@ -21,5 +21,9 @@ class NotificationCreate(BaseModel):
     status: str = "pending"
 
 class NotificationUpdate(BaseModel):
-    message: Optional[str] = None
-    status: Optional[str] = None
+    user_id: Optional[int]
+    notification_date: Optional[date]
+    notification_time: Optional[time]
+    message: Optional[str]
+    type: Optional[str]  # reminder / reservation / payment
+    status: Optional[str]  # sent / pending

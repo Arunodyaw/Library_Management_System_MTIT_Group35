@@ -17,13 +17,15 @@ class NotificationMockDataService:
             user_id=data.user_id,
             notification_date=data.notification_date,
             notification_time=data.notification_time,
-            message=data.message,
             type=data.type,
-            status=data.status
+            message=data.message,
+            status="pending",
+            created_at=datetime.now()
         )
         self.notifications.append(notification)
         self.next_id += 1
         return notification
+
     
     def get_notification_by_id(self, notification_id:int):
         for n in self.notifications:

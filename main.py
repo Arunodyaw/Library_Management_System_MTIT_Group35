@@ -32,7 +32,7 @@ def get_notifications_by_type(type: str):
 def get_notifications_by_status(status: str):
     return service.data_service.get_notifications_by_status(status)
 
-#  POST send notification
+# POST send notification
 @app.post("/notifications", response_model=Notification, status_code=status.HTTP_201_CREATED)
 def send_notification(notification: NotificationCreate):
     return service.create(notification)
