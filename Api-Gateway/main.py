@@ -1,11 +1,12 @@
-from datetime import datetime,date, time
-from fastapi import FastAPI, HTTPException, Query, Request
+from datetime import datetime,date, time,timedelta
+from fastapi import FastAPI, HTTPException, Query, Request, Depends
 from fastapi.responses import JSONResponse
 import httpx
 from pydantic import BaseModel
 from typing import Optional, Any
 from datetime import date
 import json  # Added for custom JSON serialization
+from security import verify_token
 
 app = FastAPI(title="Library Management API Gateway", version="1.0.0")
 
@@ -18,6 +19,28 @@ SERVICES = {
     "reservation": "http://localhost:8005",
     "notification": "http://localhost:8006"
 }
+
+@app.post("/gateway/login")
+def login(username: str = Query(...), password: str = Query(...)):
+    # 1. Check database if username and password match
+    # (For this example, we hardcode it)
+    if username != "admin" or password != "123":
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    # 2. Create the JWT Token
+    expire = datetime.utcnow() + timedelta(minutes=30)
+    data = {
+        "sub": username,
+        "role": "admin", # You can put user roles in the token
+        "exp": expire
+    }
+    
+    from security import SECRET_KEY, ALGORITHM, jwt
+    token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    
+    # 3. Give the token to the user
+    return {"access_token": token, "token_type": "bearer"}
+
 
 # 🔁 Forward Request Function - Fixed for date serialization
 async def forward_request(service: str, path: str, method: str, **kwargs) -> Any:
@@ -82,23 +105,23 @@ class Book(BaseModel):
     book_price: float
 
 @app.get("/gateway/books")
-async def get_books():
+async def get_books(user_data: dict = Depends(verify_token)):
     return await forward_request("book", "/books", "GET")
 
 @app.post("/gateway/books")
-async def create_book(book: Book):
+async def create_book(book: Book, user_data: dict = Depends(verify_token)):
     return await forward_request("book", "/books", "POST", json=book.dict())
 
 @app.get("/gateway/books/{book_id}")
-async def get_book(book_id: int):    
+async def get_book(book_id: int, user_data: dict = Depends(verify_token)):    
     return await forward_request("book", f"/books/{book_id}", "GET")
 
 @app.put("/gateway/books/{book_id}")
-async def update_book(book_id: int, book: Book): 
+async def update_book(book_id: int, book: Book, user_data: dict = Depends(verify_token)): 
     return await forward_request("book", f"/books/{book_id}", "PUT", json=book.dict())
 
 @app.delete("/gateway/books/{book_id}")
-async def delete_book(book_id: int):
+async def delete_book(book_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("book", f"/books/{book_id}", "DELETE")    
 
 
@@ -111,23 +134,23 @@ class Member(BaseModel):
     phone: str
 
 @app.get("/gateway/members")
-async def get_members():
+async def get_members(user_data: dict = Depends(verify_token)):
     return await forward_request("member", "/members", "GET")
 
 @app.get("/gateway/members/{member_id}")
-async def get_member(member_id: int):
+async def get_member(member_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("member", f"/members/{member_id}", "GET")
 
 @app.post("/gateway/members")
-async def create_member(member: Member):
+async def create_member(member: Member, user_data: dict = Depends(verify_token)):
     return await forward_request("member", "/members", "POST", json=member.dict())
 
 @app.put("/gateway/members/{member_id}")
-async def update_member(member_id: int, member: Member):
+async def update_member(member_id: int, member: Member, user_data: dict = Depends(verify_token)):
     return await forward_request("member", f"/members/{member_id}", "PUT", json=member.dict())
 
 @app.delete("/gateway/members/{member_id}")
-async def delete_member(member_id: int):
+async def delete_member(member_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("member", f"/members/{member_id}", "DELETE")
 
 
@@ -147,23 +170,23 @@ class BorrowRecordUpdate(BaseModel):
     status: str="borrowed"  # borrowed / returned
 
 @app.get("/gateway/borrowed-books")
-async def get_borrowed_books():
+async def get_borrowed_books(user_data: dict = Depends(verify_token)):
     return await forward_request("borrow", "/borrowed-books", "GET")
 
 @app.post("/gateway/borrow")
-async def borrow_book(record: BorrowRecord): 
+async def borrow_book(record: BorrowRecord, user_data: dict = Depends(verify_token)): 
     return await forward_request("borrow", "/borrow", "POST", json=record.dict())   
 
 @app.get("/gateway/borrow/{record_id}")
-async def get_borrow_record(record_id: int):
+async def get_borrow_record(record_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("borrow", f"/borrow/{record_id}", "GET")
 
 @app.put("/gateway/borrow/{record_id}")
-async def update_borrow_record(record_id: int, record: BorrowRecordUpdate):
+async def update_borrow_record(record_id: int, record: BorrowRecordUpdate, user_data: dict = Depends(verify_token)):
     return await forward_request("borrow", f"/borrow/{record_id}", "PUT", json=record.dict())   
 
 @app.delete("/gateway/borrow/{record_id}")
-async def delete_borrow_record(record_id: int):
+async def delete_borrow_record(record_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("borrow", f"/borrow/{record_id}", "DELETE")
 
 
@@ -177,14 +200,14 @@ class Payment(BaseModel):
 
 
 @app.post("/gateway/payment")
-async def make_payment(payment: Payment):
+async def make_payment(payment: Payment, user_data: dict = Depends(verify_token)):
     # Convert date to string before sending
     payment_dict = payment.dict()
     payment_dict['payment_date'] = payment_dict['payment_date'].isoformat()
     return await forward_request("payment", "/payment", "POST", json=payment_dict)
 
 @app.get("/gateway/payments")
-async def get_payments():
+async def get_payments(user_data: dict = Depends(verify_token)):
     return await forward_request("payment", "/payments", "GET")
 
 # Fine Model
@@ -279,19 +302,19 @@ class FineRequest(BaseModel):
 
     
 @app.get("/gateway/payment/{payment_id}")
-async def get_payment(payment_id: int):
+async def get_payment(payment_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("payment", f"/payment/{payment_id}", "GET")
 
 
 @app.put("/gateway/payment/{payment_id}")
-async def update_payment(payment_id: int, payment: Payment):
+async def update_payment(payment_id: int, payment: Payment, user_data: dict = Depends(verify_token)):
     # Convert date to string before sending
     payment_dict = payment.dict()
     payment_dict['payment_date'] = payment_dict['payment_date'].isoformat()
     return await forward_request("payment", f"/payment/{payment_id}", "PUT", json=payment_dict)
 
 @app.delete("/gateway/payment/{payment_id}")
-async def delete_payment(payment_id: int):
+async def delete_payment(payment_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("payment", f"/payment/{payment_id}", "DELETE")
 
 
@@ -311,29 +334,29 @@ class ReservationUpdate(BaseModel):
     status: str="active"  # active / cancelled
 
 @app.get("/gateway/reservations")
-async def get_reservations():
+async def get_reservations(user_data: dict = Depends(verify_token)):
     return await forward_request("reservation", "/reservations", "GET")
 
 @app.get("/gateway/reservations/{reservation_id}")
-async def get_reservation(reservation_id: int):
+async def get_reservation(reservation_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("reservation", f"/reservations/{reservation_id}", "GET")
 
 @app.post("/gateway/reservations")
-async def add_reservation(reservation: Reservation):
+async def add_reservation(reservation: Reservation, user_data: dict = Depends(verify_token)):
     # Convert date to string before sending
     reservation_dict = reservation.dict()
     reservation_dict['reservation_date'] = reservation_dict['reservation_date'].isoformat()
     return await forward_request("reservation", "/reservations", "POST", json=reservation_dict)
 
 @app.put("/gateway/reservations/{reservation_id}")
-async def update_reservation(reservation_id: int, reservation: ReservationUpdate):
+async def update_reservation(reservation_id: int, reservation: ReservationUpdate, user_data: dict = Depends(verify_token)):
     # Convert date to string before sending
     reservation_dict = reservation.dict()
     reservation_dict['reservation_date'] = reservation_dict['reservation_date'].isoformat()
     return await forward_request("reservation", f"/reservations/{reservation_id}", "PUT", json=reservation_dict)
 
 @app.delete("/gateway/reservations/{reservation_id}")
-async def delete_reservation(reservation_id: int):
+async def delete_reservation(reservation_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("reservation", f"/reservations/{reservation_id}", "DELETE")
 
 
@@ -350,23 +373,23 @@ class Notification(BaseModel):
 
 
 @app.get("/gateway/notifications")
-async def get_notifications():
+async def get_notifications(user_data: dict = Depends(verify_token)):
     return await forward_request("notification", "/notifications", "GET")
 
 @app.get("/gateway/notifications/{notification_id}")
-async def get_notification(notification_id: int):
+async def get_notification(notification_id: int, user_data: dict = Depends(verify_token)):
     return await forward_request("notification", f"/notifications/{notification_id}", "GET")
 
 @app.get("/gateway/notifications/type/{type}")
-async def get_notifications_by_type(type: str):
+async def get_notifications_by_type(type: str, user_data: dict = Depends(verify_token)):
     return await forward_request("notification", f"/notifications/type/{type}", "GET")
 
 @app.get("/gateway/notifications/status/{status}")
-async def get_notifications_by_status(status: str):
+async def get_notifications_by_status(status: str, user_data: dict = Depends(verify_token)):
     return await forward_request("notification", f"/notifications/status/{status}", "GET")
 
 @app.post("/gateway/notifications")
-async def add_notification(notification: Notification):
+async def add_notification(notification: Notification, user_data: dict = Depends(verify_token)):
     # Convert date and time to string before sending
     notification_dict = notification.dict()
     notification_dict['notification_date'] = notification_dict['notification_date'].isoformat()
@@ -375,7 +398,7 @@ async def add_notification(notification: Notification):
 
 
 @app.put("/gateway/notifications/{notification_id}")
-async def update_notification(notification_id: int, notification: Notification):
+async def update_notification(notification_id: int, notification: Notification, user_data: dict = Depends(verify_token)):
     # Convert date and time to string before sending
     notification_dict = notification.dict()
     notification_dict['notification_date'] = notification_dict['notification_date'].isoformat()
@@ -383,6 +406,6 @@ async def update_notification(notification_id: int, notification: Notification):
     return await forward_request("notification", f"/notifications/{notification_id}", "PUT", json=notification_dict)
 
 @app.delete("/gateway/notifications/{notification_id}")
-async def delete_notification(notification_id: int):
+async def delete_notification(notification_id: int, user_data: dict = Depends(verify_token)):
     # Fixed: Removed trailing comma
     return await forward_request("notification", f"/notifications/{notification_id}", "DELETE")

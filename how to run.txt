@@ -1,0 +1,13 @@
+# Create a virtual environment
+python -m venv venv
+
+# Activate it (Windows)
+venv\Scripts\activate
+
+# Install required packages 
+# (You can use the requirements.txt from the root folder)
+pip install -r requirements.txt
+
+type 
+.\start_services.bat 
+in your terminal.
