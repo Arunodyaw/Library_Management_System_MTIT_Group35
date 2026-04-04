@@ -2,8 +2,11 @@ from models import Member
 
 class MemberMockDataService:
     def __init__(self):
-        self.members = []
-        self.next_id = 1
+        self.members = [
+            Member(id=1, name="Alice Johnson", email="alice@example.com", address="123 Library Lane", phone="555-0101"),
+            Member(id=2, name="Bob Smith", email="bob@example.com", address="456 Book Blvd", phone="555-0202")
+        ]
+        self.next_id = 3
 
     def get_all_members(self):
         return self.members

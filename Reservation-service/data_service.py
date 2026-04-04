@@ -3,8 +3,11 @@ from datetime import date
 
 class ReservationMockDataService:
     def __init__(self):
-        self.reservations = []
-        self.next_id = 1
+        self.reservations = [
+            Reservation(id=1, user_id=2, book_id=2, reservation_date=date(2024, 3, 1), status="active"),
+            Reservation(id=2, user_id=1, book_id=3, reservation_date=date(2024, 3, 2), status="cancelled")
+        ]
+        self.next_id = 3
 
     def get_all(self):
         return self.reservations

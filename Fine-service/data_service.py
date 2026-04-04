@@ -3,8 +3,11 @@ from datetime import date
 
 class PaymentMockDataService:
     def __init__(self):
-        self.payments = []
-        self.next_id = 1
+        self.payments = [
+            Payment(id=1, user_id=1, amount=15.00, payment_date=date(2024, 1, 10), status="paid"),
+            Payment(id=2, user_id=2, amount=5.50, payment_date=date(2024, 2, 20), status="pending")
+        ]
+        self.next_id = 3
 
     def add_payment(self, data):
         payment = Payment(

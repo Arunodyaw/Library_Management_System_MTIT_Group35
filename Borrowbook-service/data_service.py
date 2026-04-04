@@ -3,8 +3,11 @@ from datetime import date
 
 class BorrowMockDataService:
     def __init__(self):
-        self.records = []
-        self.next_id = 1
+        self.records = [
+            BorrowRecord(id=1, member_id=1, book_id=1, borrow_date=date(2024, 1, 10), return_date=date(2024, 1, 24), status="borrowed"),
+            BorrowRecord(id=2, member_id=2, book_id=3, borrow_date=date(2024, 2, 5), return_date=date(2024, 2, 19), status="returned")
+        ]
+        self.next_id = 3
 
     def get_all_records(self):
         return self.records
