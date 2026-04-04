@@ -15,3 +15,4 @@ class BorrowCreate(BaseModel):
     book_id: int
     borrow_date: date
     return_date: date
+    status: str = "borrowed"  # borrowed / returned

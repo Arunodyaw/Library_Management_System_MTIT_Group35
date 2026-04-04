@@ -137,13 +137,14 @@ class BorrowRecord(BaseModel):
     book_id: int
     borrow_date: date
     return_date: date
-    status: str  # borrowed / returned
+    status: str="borrowed"  # borrowed / returned
 
 class BorrowRecordUpdate(BaseModel):
     member_id: int
+    book_id: int
     borrow_date: date
     return_date: date
-    status: str
+    status: str="borrowed"  # borrowed / returned
 
 @app.get("/gateway/borrowed-books")
 async def get_borrowed_books():
@@ -158,8 +159,8 @@ async def get_borrow_record(record_id: int):
     return await forward_request("borrow", f"/borrow/{record_id}", "GET")
 
 @app.put("/gateway/borrow/{record_id}")
-async def update_borrow_record(record_id: int, record: BorrowRecordUpdate):     
-    return await forward_request("borrow", f"/borrow/{record_id}", "PUT", json=record.dict())
+async def update_borrow_record(record_id: int, record: BorrowRecordUpdate):
+    return await forward_request("borrow", f"/borrow/{record_id}", "PUT", json=record.dict())   
 
 @app.delete("/gateway/borrow/{record_id}")
 async def delete_borrow_record(record_id: int):
@@ -171,7 +172,7 @@ class Payment(BaseModel):
     user_id: int
     amount: float
     payment_date: date
-    status: str  # paid / pending
+    status: str="paid" # paid / pending
 
 
 
@@ -201,7 +202,7 @@ async def calculate_fine(
 ):
     """
     Calculate fine based on due date and return date
-    Fine rate: $0.50 per day late
+    Fine rate: Rs:25/= per day late
     """
     try:
         # Parse dates
@@ -275,41 +276,7 @@ class FineRequest(BaseModel):
     due_date: str
     return_date: str
 
-@app.post("/gateway/fine/calculate-body")
-async def calculate_fine_body(fine_request: FineRequest):
-    """
-    Calculate fine using JSON body instead of query parameters
-    """
-    try:
-        due_date_obj = datetime.strptime(fine_request.due_date, "%Y-%m-%d").date()
-        return_date_obj = datetime.strptime(fine_request.return_date, "%Y-%m-%d").date()
-        
-        if return_date_obj < due_date_obj:
-            return JSONResponse(
-                content={
-                    "error": "Return date cannot be before due date",
-                    "days_late": 0,
-                    "fine_amount": 0.0
-                },
-                status_code=400
-            )
-        
-        days_late = (return_date_obj - due_date_obj).days
-        fine_amount = days_late * 0.50
-        
-        return JSONResponse(
-            content={
-                "due_date": fine_request.due_date,
-                "return_date": fine_request.return_date,
-                "days_late": days_late,
-                "fine_amount": fine_amount
-            },
-            status_code=200
-        )
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error calculating fine: {str(e)}")
+
     
 @app.get("/gateway/payment/{payment_id}")
 async def get_payment(payment_id: int):
@@ -335,12 +302,13 @@ class Reservation(BaseModel):
     user_id: int
     book_id: int
     reservation_date: date
-    status: str  # active / cancelled
+    status: str="active"  # active / cancelled
 
 class ReservationUpdate(BaseModel):
     user_id: int
+    book_id: int
     reservation_date: date
-    status: str
+    status: str="active"  # active / cancelled
 
 @app.get("/gateway/reservations")
 async def get_reservations():
@@ -377,8 +345,8 @@ class Notification(BaseModel):
     notification_date: date
     notification_time: time
     message: str
-    type: str   # reminder / reservation / payment
-    status: str # sent / pending
+    type: str = "return reminder"  # reminder / reservation / payment
+    status: str = "pending"  # sent / pending
 
 
 @app.get("/gateway/notifications")
@@ -398,15 +366,21 @@ async def get_notifications_by_status(status: str):
     return await forward_request("notification", f"/notifications/status/{status}", "GET")
 
 @app.post("/gateway/notifications")
-async def create_notification(notification: Notification):
-    notification_dict = notification.dict(exclude_none=True)
-    return await forward_request("notification", "/notifications", "POST", json=notification_dict)
+async def add_notification(notification: Notification):
+    # Convert date and time to string before sending
+    notification_dict = notification.dict()
+    notification_dict['notification_date'] = notification_dict['notification_date'].isoformat()
+    notification_dict['notification_time'] = notification_dict['notification_time'].isoformat()
+    return await forward_request("notification", "/notifications", "POST", json=notification_dict)  
 
 
 @app.put("/gateway/notifications/{notification_id}")
 async def update_notification(notification_id: int, notification: Notification):
-    # Include id for update
-    return await forward_request("notification", f"/notifications/{notification_id}", "PUT", json=notification.dict())
+    # Convert date and time to string before sending
+    notification_dict = notification.dict()
+    notification_dict['notification_date'] = notification_dict['notification_date'].isoformat()
+    notification_dict['notification_time'] = notification_dict['notification_time'].isoformat()
+    return await forward_request("notification", f"/notifications/{notification_id}", "PUT", json=notification_dict)
 
 @app.delete("/gateway/notifications/{notification_id}")
 async def delete_notification(notification_id: int):

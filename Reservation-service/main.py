@@ -19,7 +19,7 @@ def get_reservation(reservation_id: int):
         raise HTTPException(status_code=404, detail="Reservation not found")
     return reservation
 
-# ✅ POST reserve a book
+#POST reserve a book
 @app.post("/reservations", response_model=Reservation, status_code=status.HTTP_201_CREATED)
 def reserve_book(data: ReservationCreate):
     return service.create(data)
@@ -31,7 +31,7 @@ def update_reservation(reservation_id: int, data: ReservationCreate):
         raise HTTPException(status_code=404, detail="Reservation not found")
     return reservation
 
-# ✅ DELETE cancel reservation
+#DELETE cancel reservation
 @app.delete("/reservations/{reservation_id}", response_model=Reservation)
 def cancel_reservation(reservation_id: int):
     reservation = service.cancel(reservation_id)

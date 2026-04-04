@@ -23,10 +23,19 @@ class ReservationMockDataService:
         self.reservations.append(reservation)
         self.next_id += 1
         return reservation
+    
+    def update_reservation(self, reservation_id, data):
+        reservation = self.get_reservation_by_id(reservation_id)
+        if reservation:
+            update_data = data.dict(exclude_unset=True)
+            for key, value in update_data.items():
+                setattr(reservation, key, value)
+            return reservation
+        return None
 
     def delete_reservation(self, reservation_id):
-        for r in self.reservations:
-            if r.id == reservation_id:
-                r.status = "cancelled"
-                return r
-        return None
+        reservation = self.get_reservation_by_id(reservation_id)
+        if reservation:
+            self.reservations.remove(reservation)
+            return True
+        return False

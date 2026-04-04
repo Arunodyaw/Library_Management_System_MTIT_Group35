@@ -27,14 +27,14 @@ def get_records():
 
 @app.put("/borrow/{record_id}", response_model=BorrowRecord)
 def update_borrow_record(record_id: int, data: BorrowCreate):
-    record = service.update_borrow_record(record_id, data)
-    if not record:
+    updated = service.update(record_id, data)
+    if not updated:
         raise HTTPException(status_code=404, detail="Record not found")
-    return record
+    return updated
 
 @app.delete("/borrow/{record_id}", status_code=204)
 def delete_borrow_record(record_id: int):
-    success = service.delete_borrow_record(record_id)
+    success = service.delete(record_id)
     if not success:
         raise HTTPException(status_code=404, detail="Record not found")
-    return None   
+    return None

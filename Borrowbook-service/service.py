@@ -19,11 +19,10 @@ class BorrowService:
                 return record
         return None
     
-    
     def update(self, record_id, data):
-        # This method can be used to update borrow records if needed
         return self.data_service.update_record(record_id, data) 
     
     def delete(self, record_id):
-        # This method can be used to delete borrow records if needed
         return self.data_service.delete_record(record_id)   
+    
+    

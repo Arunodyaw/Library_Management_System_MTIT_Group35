@@ -21,13 +21,15 @@ class BorrowMockDataService:
             member_id=data.member_id,
             book_id=data.book_id,
             borrow_date=data.borrow_date,
-            return_date=data.return_date,  # This can be set to a default return date or calculated based on borrowing rules
+            return_date=data.return_date, 
             status="borrowed"
         )
         self.records.append(record)
         self.next_id += 1
         return record
 
+    
+    
     def update_record(self, record_id, data):
         for record in self.records:
             if record.id == record_id:

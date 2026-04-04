@@ -12,3 +12,11 @@ class Reservation(BaseModel):
 class ReservationCreate(BaseModel):
     user_id: int
     book_id: int
+    reservation_date: date
+    status: str = "active"  # active / cancelled
+
+class ReservationUpdate(BaseModel):
+    user_id: int
+    book_id: int
+    reservation_date: date
+    status: str = "active"  # active / cancelled
